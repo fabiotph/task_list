@@ -50,9 +50,13 @@ class _HomePageState extends State<HomePage> {
                 title: Text(task.title),
                 key: Key(task.id.toString()),
                 value: task.done,
-                onChanged: null,
                 activeColor: Colors.amber,
-                subtitle: Text(task.subtitle));
+                subtitle: Text(task.subtitle),
+                onChanged: (value) {
+                  setState(() {
+                    task.done = value;
+                  });
+                });
           }),
     );
   }
