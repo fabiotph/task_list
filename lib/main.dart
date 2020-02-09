@@ -12,6 +12,7 @@ class App extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.amber,
       ),
+      debugShowCheckedModeBanner: false,
       home: HomePage(),
       darkTheme:
           ThemeData(primaryColor: Colors.amber, brightness: Brightness.dark),
@@ -35,12 +36,39 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  var newTaskCtrl = new TextEditingController();
+
+  void addTask() {
+    if (newTaskCtrl.text.isEmpty) return;
+    setState(() {
+      widget.tasks.add(
+        Task(title: newTaskCtrl.text, done: false),
+      );
+      newTaskCtrl.clear();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         leading: Icon(Icons.menu),
-        title: Text("TODO List"),
+        title: TextFormField(
+          controller: newTaskCtrl,
+          keyboardType: TextInputType.text,
+          autocorrect: true,
+          autovalidate: true,
+          style: TextStyle(
+            color: Colors.black87,
+            fontSize: 22,
+          ),
+          decoration: InputDecoration(
+            labelText: "Criar nova tarefa",
+            labelStyle: TextStyle(
+              color: Colors.black54,
+            ),
+          ),
+        ),
       ),
       body: ListView.builder(
           itemCount: widget.tasks.length,
@@ -58,6 +86,14 @@ class _HomePageState extends State<HomePage> {
                   });
                 });
           }),
+      floatingActionButton: FloatingActionButton(
+        onPressed: addTask,
+        child: Icon(
+          Icons.add,
+          color: Colors.black,
+        ),
+        backgroundColor: Colors.amber,
+      ),
     );
   }
 }
