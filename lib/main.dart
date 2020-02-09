@@ -48,6 +48,12 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  void removeTask(int index) {
+    setState(() {
+      widget.tasks.removeAt(index);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -74,17 +80,29 @@ class _HomePageState extends State<HomePage> {
           itemCount: widget.tasks.length,
           itemBuilder: (BuildContext ctx, int index) {
             final task = widget.tasks[index];
-            return CheckboxListTile(
-                title: Text(task.title),
-                key: Key(task.id.toString()),
-                value: task.done,
-                activeColor: Colors.amber,
-                subtitle: Text(task.subtitle),
-                onChanged: (value) {
-                  setState(() {
-                    task.done = value;
-                  });
-                });
+            return Dismissible(
+              child: CheckboxListTile(
+                  title: Text(task.title),
+                  value: task.done,
+                  activeColor: Colors.amber,
+                  subtitle: Text(task.subtitle),
+                  onChanged: (value) {
+                    setState(() {
+                      task.done = value;
+                    });
+                  }),
+              key: Key(task.id.toString()),
+              background: Container(
+                color: Colors.red.withOpacity(0.8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[Icon(Icons.delete), Text("Excluir")],
+                ),
+              ),
+              onDismissed: (direction) {
+                removeTask(index);
+              },
+            );
           }),
       floatingActionButton: FloatingActionButton(
         onPressed: addTask,
