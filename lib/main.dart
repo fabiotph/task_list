@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:task_list/models/task.dart';
 
 void main() => runApp(App());
@@ -26,9 +29,6 @@ class HomePage extends StatefulWidget {
 
   HomePage() {
     tasks = [];
-    tasks.add(Task(title: "Tarefa 1", done: false));
-    tasks.add(Task(title: "Tarefa 2", done: true));
-    tasks.add(Task(title: "Tarefa 3", done: false));
   }
 
   @override
@@ -38,6 +38,10 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   var newTaskCtrl = new TextEditingController();
 
+  _HomePageState() {
+    loadTasks();
+  }
+
   void addTask() {
     if (newTaskCtrl.text.isEmpty) return;
     setState(() {
@@ -46,12 +50,32 @@ class _HomePageState extends State<HomePage> {
       );
       newTaskCtrl.clear();
     });
+    saveTasks();
   }
 
   void removeTask(int index) {
     setState(() {
       widget.tasks.removeAt(index);
     });
+    saveTasks();
+  }
+
+  loadTasks() async {
+    var prefs = await SharedPreferences.getInstance();
+    var data = prefs.getString('data');
+
+    if (data != null) {
+      Iterable decoded = jsonDecode(data);
+      List<Task> result = decoded.map((elem) => Task.fromJson(elem)).toList();
+      setState(() {
+        widget.tasks = result;
+      });
+    }
+  }
+
+  saveTasks() async {
+    var prefs = await SharedPreferences.getInstance();
+    await prefs.setString('data', jsonEncode(widget.tasks));
   }
 
   @override
@@ -90,6 +114,7 @@ class _HomePageState extends State<HomePage> {
                     setState(() {
                       task.done = value;
                     });
+                    saveTasks();
                   }),
               key: Key(task.id.toString()),
               background: Container(
