@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:task_list/models/task.dart';
@@ -37,6 +36,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   var newTaskCtrl = new TextEditingController();
+  var scaffoldKey = new GlobalKey<ScaffoldState>();
 
   _HomePageState() {
     loadTasks();
@@ -54,9 +54,26 @@ class _HomePageState extends State<HomePage> {
   }
 
   void removeTask(int index) {
+    List<Task> listTask = new List<Task>.from(widget.tasks);
     setState(() {
       widget.tasks.removeAt(index);
     });
+    final snackBar = new SnackBar(
+      duration: Duration(milliseconds: 1500),
+      content: Text("Tarefa Excluída"),
+      action: SnackBarAction(
+        label: "Desfazer",
+        onPressed: () {
+          setState(() {
+            print(widget.tasks);
+            widget.tasks = listTask;
+            print(widget.tasks);
+          });
+          saveTasks();
+        },
+      ),
+    );
+    scaffoldKey.currentState.showSnackBar(snackBar);
     saveTasks();
   }
 
@@ -81,6 +98,7 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: scaffoldKey,
       appBar: AppBar(
         leading: Icon(Icons.menu),
         title: TextFormField(
