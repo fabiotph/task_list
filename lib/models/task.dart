@@ -17,4 +17,19 @@ class Task {
         'subtitle': subtitle,
         'done': done,
       };
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Task &&
+          runtimeType == other.runtimeType &&
+          id == other.id &&
+          title == other.title &&
+          subtitle == other.subtitle &&
+          done == other.done;
+
+  //New
+  @override
+  int get hashCode =>
+      id.hashCode ^ title.hashCode ^ subtitle.hashCode ^ done.hashCode;
 }

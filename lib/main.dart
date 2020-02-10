@@ -36,28 +36,51 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   var newTaskCtrl = new TextEditingController();
-  var scaffoldKey = new GlobalKey<ScaffoldState>();
+  final scaffoldKey = new GlobalKey<ScaffoldState>();
+  final listKey = new GlobalKey<AnimatedListState>();
 
   _HomePageState() {
     loadTasks();
   }
 
-  void addTask() {
+  void getNewTask() {
     if (newTaskCtrl.text.isEmpty) return;
+    Task newTask = new Task(title: newTaskCtrl.text, done: false);
+    newTaskCtrl.clear();
+    addTask(newTask);
+  }
+
+  void addTask(Task task) {
+    print(task.title);
+    int index = widget.tasks.length;
     setState(() {
-      widget.tasks.add(
-        Task(title: newTaskCtrl.text, done: false),
-      );
-      newTaskCtrl.clear();
+      widget.tasks.add(task);
     });
+    listKey.currentState
+        .insertItem(index, duration: Duration(milliseconds: 1000));
     saveTasks();
   }
 
   void removeTask(int index) {
     List<Task> listTask = new List<Task>.from(widget.tasks);
+    Task task;
     setState(() {
-      widget.tasks.removeAt(index);
+      task = widget.tasks.removeAt(index);
     });
+
+    listKey.currentState.removeItem(index,
+        (BuildContext context, Animation animation) {
+      return FadeTransition(
+        opacity: CurvedAnimation(parent: animation, curve: Interval(0.5, 1.0)),
+        child: SizeTransition(
+          sizeFactor:
+              CurvedAnimation(parent: animation, curve: Interval(0.0, 1.0)),
+          axisAlignment: 0.0,
+          child: _buildItem(task),
+        ),
+      );
+    }, duration: Duration(milliseconds: 0));
+
     final snackBar = new SnackBar(
       duration: Duration(milliseconds: 1500),
       content: Text("Tarefa Excluída"),
@@ -65,9 +88,7 @@ class _HomePageState extends State<HomePage> {
         label: "Desfazer",
         onPressed: () {
           setState(() {
-            print(widget.tasks);
             widget.tasks = listTask;
-            print(widget.tasks);
           });
           saveTasks();
         },
@@ -83,16 +104,43 @@ class _HomePageState extends State<HomePage> {
 
     if (data != null) {
       Iterable decoded = jsonDecode(data);
-      List<Task> result = decoded.map((elem) => Task.fromJson(elem)).toList();
-      setState(() {
-        widget.tasks = result;
-      });
+      decoded.forEach((elem) => {addTask(Task.fromJson(elem))});
+      // setState(() {
+      //   widget.tasks = result;
+      // });
     }
   }
 
   saveTasks() async {
     var prefs = await SharedPreferences.getInstance();
     await prefs.setString('data', jsonEncode(widget.tasks));
+  }
+
+  Widget _buildItem(Task task, [int index]) {
+    return Dismissible(
+      child: CheckboxListTile(
+          title: Text(task.title),
+          value: task.done,
+          activeColor: Colors.amber,
+          subtitle: Text(task.subtitle),
+          onChanged: (value) {
+            setState(() {
+              task.done = value;
+            });
+            saveTasks();
+          }),
+      key: Key(task.id.toString()),
+      background: Container(
+        color: Colors.red.withOpacity(0.8),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[Icon(Icons.delete), Text("Excluir")],
+        ),
+      ),
+      onDismissed: (direction) {
+        removeTask(index);
+      },
+    );
   }
 
   @override
@@ -118,37 +166,18 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
       ),
-      body: ListView.builder(
-          itemCount: widget.tasks.length,
-          itemBuilder: (BuildContext ctx, int index) {
+      body: AnimatedList(
+          key: listKey,
+          initialItemCount: widget.tasks.length,
+          itemBuilder: (BuildContext ctx, int index, Animation animation) {
             final task = widget.tasks[index];
-            return Dismissible(
-              child: CheckboxListTile(
-                  title: Text(task.title),
-                  value: task.done,
-                  activeColor: Colors.amber,
-                  subtitle: Text(task.subtitle),
-                  onChanged: (value) {
-                    setState(() {
-                      task.done = value;
-                    });
-                    saveTasks();
-                  }),
-              key: Key(task.id.toString()),
-              background: Container(
-                color: Colors.red.withOpacity(0.8),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: <Widget>[Icon(Icons.delete), Text("Excluir")],
-                ),
-              ),
-              onDismissed: (direction) {
-                removeTask(index);
-              },
+            return FadeTransition(
+              opacity: animation,
+              child: _buildItem(task, index),
             );
           }),
       floatingActionButton: FloatingActionButton(
-        onPressed: addTask,
+        onPressed: getNewTask,
         child: Icon(
           Icons.add,
           color: Colors.black,
